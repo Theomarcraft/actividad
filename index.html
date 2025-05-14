@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro y Citas Médicas</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+
+    .seccion {
+      background-color: #111;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00f0ff;
+      width: 100%;
+      max-width: 600px;
+      display: none;
+    }
+
+    .activo {
+      display: block;
+    }
+
+    h1, h2 {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      text-align: left;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      background-color: #333;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      box-shadow: 0 0 5px #00f0ff;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background-color: #00f0ff;
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #777;
+      cursor: not-allowed;
+    }
+
+    .deshabilitado {
+      color: #777;
+    }
+
+    #btnRobot {
+      background-color: #222;
+      border: 2px solid #00f0ff;
+      color: #00f0ff;
+      font-weight: bold;
+    }
+
+    #calendario div {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sección de bienvenida -->
+  <div id="bienvenida" class="seccion activo">
+    <h1>¡Bienvenido!</h1>
+    <button onclick="mostrarFormulario()">Registrarse</button>
+    <button onclick="mostrarLogin()">Iniciar sesión</button>
+  </div>
+
+  <!-- Sección de formulario de registro -->
+  <div id="formulario" class="seccion">
+    <h2>Registrarse</h2>
+    <label>Nombre:</label>
+    <input type="text" id="nombre" placeholder="Ingrese su nombre" />
+    <label>Correo:</label>
+    <input type="email" id="correo" placeholder="Ingrese su correo" />
+    <label>Contraseña:</label>
+    <input type="password" id="password" placeholder="Cree una contraseña" />
+    <label>Tipo de documento:</label>
+    <select id="tipoDocumento">
+      <option value="cc">Cédula de ciudadanía</option>
+      <option value="ti">Tarjeta de identidad</option>
+      <option value="ce">Cédula de extranjería</option>
+    </select>
+    <label>Número de documento:</label>
+    <input type="text" id="numeroDocumento" placeholder="Ingrese su número" />
+
+    <!-- Botón no soy un robot -->
+    <button id="btnRobot" type="button" onclick="verificarRobot()">No soy un robot 🤖</button>
+
+    <button id="btnContinuar" onclick="continuarRegistro()" disabled>Registrar</button>
+  </div>
+
+  <!-- Sección para iniciar sesión -->
+  <div id="inicioSesion" class="seccion">
+    <h2>Iniciar Sesión</h2>
+    <label>Correo:</label>
+    <input type="email" id="correoLogin" placeholder="Ingrese su correo" />
+    <label>Contraseña:</label>
+    <input type="password" id="passwordLogin" placeholder="Ingrese su contraseña" />
+    <button onclick="iniciarSesion()">Iniciar Sesión</button>
+  </div>
+
+  <!-- Sección de calendario para agendar citas -->
+  <div id="calendarioCitas" class="seccion">
+    <h2>Agenda tu cita médica</h2>
+    <div id="calendario"></div>
+    <p id="seleccionDia" style="margin-top: 20px;"></p>
+  </div>
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script>
+    emailjs.init("kPhxowMBPGG1imCuk");
+
+    function mostrarFormulario() {
+      document.getElementById("bienvenida").classList.remove("activo");
+      document.getElementById("formulario").classList.add("activo");
+    }
+
+    function mostrarLogin() {
+      document.getElementById("bienvenida").classList.remove("activo");
+      document.getElementById("inicioSesion").classList.add("activo");
+    }
+
+    function verificarRobot() {
+      const btn = document.getElementById('btnContinuar');
+      btn.disabled = false;
+
+      const robotBtn = document.getElementById('btnRobot');
+      robotBtn.innerText = "Verificado ✅";
+      robotBtn.disabled = true;
+      robotBtn.style.backgroundColor = "#4CAF50";
+    }
+
+    function continuarRegistro() {
+      const nombre = document.getElementById("nombre").value.trim();
+      const correo = document.getElementById("correo").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!nombre || !correo || !password) {
+        alert("Por favor, complete todos los campos.");
+        return;
+      }
+
+      document.getElementById("btnContinuar").classList.add("deshabilitado");
+      document.getElementById("btnContinuar").disabled = true;
+
+      const usuario = { nombre, correo, password, verificado: false };
+      localStorage.setItem("usuario", JSON.stringify(usuario));
+
+      enviarCorreoVerificacion(correo);
+
+      setTimeout(() => {
+        alert("¡Registro exitoso! Revisa tu correo para verificar tu cuenta.");
+        document.getElementById("formulario").classList.remove("activo");
+        document.getElementById("inicioSesion").classList.add("activo");
+      }, 2000);
+    }
+
+    function enviarCorreoVerificacion(correo) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(correo)) {
+        alert("Por favor ingrese un correo electrónico válido.");
+        return;
+      }
+
+      const templateParams = {
+        to_email: correo,
+        mensaje: `¡Hola! Gracias por registrarte en nuestra plataforma. Para completar tu registro, por favor haz clic en el siguiente enlace de verificación: \n\n[Verificar mi cuenta](https://createcite.netlify.app/verificar.html?correo=${encodeURIComponent(correo)})\n\nSi no te registraste en nuestro sitio, por favor ignora este mensaje.`
+      };
+
+      emailjs.send("service_2cpdzyp", "template_v3fokk8", templateParams)
+        .then(function (response) {
+          console.log("Correo enviado con éxito", response);
+          alert("Correo de verificación enviado con éxito. Revisa tu bandeja de entrada.");
+        })
+        .catch(function (error) {
+          console.error("❌ Error al enviar el correo:", error);
+          alert("Hubo un error al intentar enviar el correo. Revisa la consola para más detalles.");
+        });
+    }
+
+    function iniciarSesion() {
+      const correoLogin = document.getElementById("correoLogin").value.trim();
+      const passwordLogin = document.getElementById("passwordLogin").value.trim();
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+      if (!usuario || usuario.correo !== correoLogin || usuario.password !== passwordLogin) {
+        alert("Credenciales incorrectas o no verificado.");
+        return;
+      }
+
+      if (!usuario.verificado) {
+        alert("Por favor, verifica tu correo antes de iniciar sesión.");
+        return;
+      }
+
+      alert("¡Inicio de sesión exitoso!");
+      document.getElementById("inicioSesion").classList.remove("activo");
+      document.getElementById("calendarioCitas").classList.add("activo");
+      mostrarCalendario();
+    }
+
+    // Nueva función de verificación de cuenta
+    function verificarCuenta() {
+      const params = new URLSearchParams(window.location.search);
+      const correoVerificado = params.get("correo");
+
+      if (correoVerificado) {
+        const usuario = JSON.parse(localStorage.getItem("usuario"));
+        if (usuario && usuario.correo === correoVerificado) {
+          usuario.verificado = true;
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          alert("¡Tu cuenta ha sido verificada exitosamente! Ahora puedes iniciar sesión.");
+          window.location.href = "index.html"; // Redirige a la página de inicio de sesión
+        } else {
+          alert("No se encontró una cuenta asociada a este correo.");
+        }
+      } else {
+        alert("El enlace de verificación no es válido.");
+      }
+    }
+
+    // Llamada a la función de verificación al cargar la página de verificación
+    if (window.location.pathname.includes("verificar.html")) {
+      verificarCuenta();
+    }
+
+    function mostrarCalendario() {
+      const calendarioDiv = document.getElementById("calendario");
+      calendarioDiv.innerHTML = "";
+
+      const fechaActual = new Date();
+      const año = fechaActual.getFullYear();
+
+      for (let mes = 0; mes < 12; mes++) {
+        const nombreMes = new Date(año, mes).toLocaleString("es-ES", { month: "long" });
+        const tituloMes = document.createElement("h3");
+        tituloMes.textContent = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+        calendarioDiv.appendChild(tituloMes);
+
+        const diasEnMes = new Date(año, mes + 1, 0).getDate();
+        const contenedorDias = document.createElement("div");
+        contenedorDias.style.display = "flex";
+        contenedorDias.style.flexWrap = "wrap";
+        contenedorDias.style.gap = "5px";
+
+        for (let dia = 1; dia <= diasEnMes; dia++) {
+          const botonDia = document.createElement("button");
+          botonDia.textContent = dia;
+          botonDia.style.width = "40px";
+          botonDia.style.height = "40px";
+          botonDia.style.backgroundColor = "#222";
+          botonDia.style.color = "#00f0ff";
+          botonDia.style.border = "1px solid #00f0ff";
+          botonDia.style.borderRadius = "4px";
+          botonDia.style.cursor = "pointer";
+
+          botonDia.onclick = () => {
+            document.getElementById("seleccionDia").textContent = `Has seleccionado el ${dia} de ${nombreMes} de ${año}.`;
+          };
+
+          contenedorDias.appendChild(botonDia);
+        }
+
+        calendarioDiv.appendChild(contenedorDias);
+      }
+    }
+  </script>
+
+</body>
+</html>

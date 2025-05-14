@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificar Cuenta</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+
+    .contenedor {
+      background-color: #111;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00f0ff;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    p {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #00f0ff;
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #777;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <h1>Verificación de Cuenta</h1>
+    <p id="mensajeVerificacion">Estamos verificando tu cuenta...</p>
+    <button id="btnIrInicio" onclick="window.location.href='index.html'">Ir al inicio</button>
+  </div>
+
+  <script>
+    // Función para verificar la cuenta
+    function verificarCuenta() {
+      const params = new URLSearchParams(window.location.search);
+      const correoVerificado = params.get("correo");  // Obtenemos el correo de la URL
+
+      const mensaje = document.getElementById("mensajeVerificacion");
+      const boton = document.getElementById("btnIrInicio");
+
+      // Verificar si el correo existe en la URL
+      if (correoVerificado) {
+        // Obtener el usuario almacenado en el localStorage
+        const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+        // Si el correo en la URL coincide con el correo almacenado
+        if (usuario && usuario.correo === correoVerificado) {
+          usuario.verificado = true;  // Cambiar el estado de verificación
+          localStorage.setItem("usuario", JSON.stringify(usuario));  // Guardar el usuario verificado en localStorage
+          mensaje.textContent = "✅ ¡Cuenta verificada exitosamente! Ya puedes iniciar sesión.";
+        } else {
+          mensaje.textContent = "⚠️ No se encontró la cuenta. Asegúrate de usar el mismo navegador y dispositivo donde te registraste.";
+        }
+      } else {
+        mensaje.textContent = "❌ El enlace de verificación no es válido.";
+      }
+
+      boton.style.display = "inline-block";  // Mostrar el botón para redirigir al inicio
+    }
+
+    // Llamar a la función verificarCuenta cuando se carga la página de verificación
+    window.onload = verificarCuenta;
+  </script>
+
+</body>
+</html>
